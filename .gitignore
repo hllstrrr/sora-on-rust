@@ -1,2 +1,4 @@
 /target
 whatsapp.db*
+/src/commands/mod.rs
+/src/commands/**/mod.rs
