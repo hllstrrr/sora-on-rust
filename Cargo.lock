@@ -124,11 +124,13 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
+ "dashmap",
  "dotenvy",
  "env_logger",
  "linkme",
  "log",
  "serde",
+ "serde_json",
  "tokio",
  "toml 1.0.6+spec-1.1.0",
  "wacore",
@@ -481,6 +483,7 @@ dependencies = [
  "lock_api",
  "once_cell",
  "parking_lot_core",
+ "serde",
 ]
 
 [[package]]
