@@ -3,31 +3,41 @@ use std::path::Path;
 
 fn main() {
     let commands_path = Path::new("src/commands");
-    generate_mod_rs(commands_path);
+    let content = generate_mod_content(commands_path);
+    let mod_file = commands_path.join("mod.rs");
+    fs::write(mod_file, content).expect("Unable to write src/commands/mod.rs");
+    
     println!("cargo:rerun-if-changed=src/commands");
 }
 
-fn generate_mod_rs(path: &Path) {
-    let entries = fs::read_dir(path).unwrap();
-    let mut mods = Vec::new();
+fn generate_mod_content(path: &Path) -> String {
+    let mut entries: Vec<_> = fs::read_dir(path)
+        .unwrap()
+        .filter_map(|res| res.ok())
+        .collect();
+
+    entries.sort_by_key(|e| e.path());
+
+    let mut lines = Vec::new();
 
     for entry in entries {
-        let entry = entry.unwrap();
         let path = entry.path();
-        
+        let file_name = path.file_name().unwrap().to_str().unwrap();
+
         if path.is_dir() {
-            let dir_name = path.file_name().unwrap().to_str().unwrap();
-            mods.push(format!("pub mod {};", dir_name));
-            generate_mod_rs(&path);
+            let inner_content = generate_mod_content(&path);
+            if !inner_content.trim().is_empty() {
+                let indented = inner_content.replace("\n", "\n    ");
+                lines.push(format!("pub mod {} {{\n    {}\n}}", file_name, indented));
+            }
         } else if path.extension().and_then(|s| s.to_str()) == Some("rs") {
-            let file_name = path.file_stem().unwrap().to_str().unwrap();
-            if file_name != "mod" {
-                mods.push(format!("pub mod {};", file_name));
+            let file_stem = path.file_stem().unwrap().to_str().unwrap();
+            
+            if file_stem != "mod" {
+                lines.push(format!("pub mod {};", file_stem));
             }
         }
     }
 
-    let mod_file = path.join("mod.rs");
-    let content = mods.join("\n");
-    let _ = fs::write(mod_file, content);
+    lines.join("\n")
 }
