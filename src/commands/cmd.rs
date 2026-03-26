@@ -14,8 +14,8 @@ pub struct Context {
 }
 
 impl Context {
-    pub async fn reply(&self, text: &str) -> anyhow::Result<()> {
-        crate::send_msg!(
+    pub async fn reply(&self, text: &str) -> anyhow::Result<String> {
+        let msg_id = crate::send_msg!(
             self.client,
             self.msg,
             self.info,
@@ -25,7 +25,7 @@ impl Context {
             reply: true
         )
         .await?;
-        Ok(())
+        Ok(msg_id)
     }
 }
 #[distributed_slice]
