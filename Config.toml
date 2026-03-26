@@ -1,3 +1,4 @@
 prefixes = ["{", "}"]
 db_path = "session/whatsapp.db"
 custom_code = "HELLSTAR"
+mode = "self"
