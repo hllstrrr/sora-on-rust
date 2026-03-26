@@ -17,6 +17,7 @@ impl Context {
     pub async fn reply(&self, text: &str) -> anyhow::Result<()> {
         crate::send_msg!(
             self.client,
+            self.msg,
             self.info,
             self.state,
             dst: self.info.source.chat,
