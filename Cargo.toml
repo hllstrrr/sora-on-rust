@@ -1,26 +1,26 @@
 [package]
-name = "app"
+name = "sora-on-rust"
 version = "0.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-whatsapp-rust = "0.3"
-whatsapp-rust-sqlite-storage = "0.3"
-whatsapp-rust-tokio-transport = "0.3"
-whatsapp-rust-ureq-http-client = "0.3"
-wacore = "0.3"
-waproto = "0.3"
-tokio = { version = "1.48", features = ["macros", "rt-multi-thread"] }
+whatsapp-rust = "0.5"
+whatsapp-rust-sqlite-storage = "0.5"
+whatsapp-rust-tokio-transport = "0.5"
+whatsapp-rust-ureq-http-client = "0.5"
+wacore = "0.5"
+waproto = "0.5"
+tokio = { version = "1.50", features = ["macros", "rt-multi-thread"] }
 log = "0.4.29"
-env_logger = "0.11.9"
+env_logger = "0.11.10"
 chrono = "0.4.44"
 async-trait = "0.1.89"
 linkme = "0.3.35"
 anyhow = "1.0.102"
 serde = { version = "1.0.228", features = ["derive"] }
-toml = "1.0.6"
+toml = "1.1.0"
 dotenvy = "0.15.7"
 dashmap = { version = "6.1.0", features = ["serde"]}
 serde_json = "1.0.149"
