@@ -2,6 +2,9 @@ use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::Arc;
+use std::time::Instant;
+
+use crate::config::AppConfig;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ChatSettings {
@@ -11,20 +14,25 @@ pub struct ChatSettings {
 pub struct AppState {
     pub settings: DashMap<String, ChatSettings>,
     pub file_path: String,
+    pub start_time: Instant,
+    pub config: AppConfig,
 }
 
 impl AppState {
     pub fn load(path: &str) -> Arc<Self> {
+        let start_time = Instant::now();
         let file_path = path.to_string();        
         let settings = if let Ok(data) = fs::read_to_string(&file_path) {
             serde_json::from_str(&data).unwrap_or_else(|_| DashMap::new())
         } else {
             DashMap::new()
         };
-
+        let config = AppConfig::load().unwrap();
         Arc::new(Self {
             settings,
             file_path,
+            start_time,
+            config,
         })
     }
 
