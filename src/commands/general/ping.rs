@@ -14,10 +14,10 @@ cmd!(
         match TcpStream::connect(server_wangsaf).await {
             Ok(_) => {
                 let latency = start.elapsed();
-                let ping = ctx.reply(&format!("```Pong!\n----------------------\nNetwork Latency: {}ms\nMessage Latency: Measuring...```", latency.as_millis())).await?;
+                let ping = ctx.reply(&format!("```Pong!\n----------------------\nNetwork Latency: {}ms\nResponse   Time: Measuring...```", latency.as_millis())).await?;
                 let rtt = start.elapsed();
                 let final_text = wa::Message {
-                    conversation: Some(format!("```Pong!\n----------------------\nNetwork Latency: {}ms\nMessage Latency: {}ms```", latency.as_millis(), rtt.as_millis()).to_string()),
+                    conversation: Some(format!("```Pong!\n----------------------\nNetwork Latency: {}ms\nResponse   Time: {}ms```", latency.as_millis(), rtt.as_millis()).to_string()),
                     ..Default::default()
                 };
 
