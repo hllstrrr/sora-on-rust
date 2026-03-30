@@ -17,6 +17,7 @@ fn get_memory_usage() -> String {
     }
     "Unknown".to_string()
 }
+
 fn get_os_name() -> String {
     if let Ok(os_release) = std::fs::read_to_string("/etc/os-release") {
         for line in os_release.lines() {
@@ -42,7 +43,7 @@ fn get_lib_version() -> String {
 }
 
 cmd!(
-    InfoCommand,
+    Info,
     name: "info",
     aliases: ["i", "inf"],
     category: "general",
