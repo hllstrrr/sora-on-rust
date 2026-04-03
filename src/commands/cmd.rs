@@ -7,14 +7,14 @@ use linkme::distributed_slice;
 use crate::state::AppState;
 use std::{collections::HashMap, sync::Arc};
 
-pub struct Context {
+pub struct Context<'a> {
     pub client: Arc<Client>,
-    pub msg: Arc<Message>,
-    pub info: Arc<MessageInfo>,
+    pub msg: &'a Message,
+    pub info: &'a MessageInfo,
     pub state: Arc<AppState>,
 }
 
-impl Context {
+impl<'a> Context<'a> {
     pub async fn reply(&self, text: &str) -> anyhow::Result<String> {
         let msg_id = crate::send_msg!(
             self.client,
@@ -37,7 +37,7 @@ pub trait Command: Send + Sync {
     fn name(&self) -> &str;
     fn aliases(&self) -> &[&str];
     fn category(&self) -> &str;
-    async fn execute(&self, ctx: Context) -> anyhow::Result<()>;
+    async fn execute(&self, ctx: Context<'_>) -> anyhow::Result<()>;
 }
 
 #[macro_export]
@@ -50,7 +50,7 @@ macro_rules! cmd {
             fn name(&self) -> &str { $name }
             fn aliases(&self) -> &[&str] { &[$($alias),*] }
             fn category(&self) -> &str { $cat }
-            async fn execute(&self, $ctx: crate::commands::cmd::Context ) -> anyhow::Result<()> {
+            async fn execute(&self, $ctx: crate::commands::cmd::Context<'_> ) -> anyhow::Result<()> {
                 $body;
                 Ok(())
             }
