@@ -5,5 +5,6 @@ pub mod general {
     pub mod ping;
 }
 pub mod root {
+    pub mod exec;
     pub mod set;
 }
