@@ -4,6 +4,8 @@ use whatsapp_rust::client::Client;
 use wacore::types::message::MessageInfo;
 use waproto::whatsapp::Message;
 use linkme::distributed_slice;
+use waproto::whatsapp as wa;
+use waproto::whatsapp::message::ReactionMessage;
 use crate::state::AppState;
 use std::{collections::HashMap, sync::Arc};
 
@@ -17,6 +19,29 @@ pub struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
+    pub async fn react(&self, emoji: &str) -> anyhow::Result<String> {
+        let reaction = wa::Message {
+            reaction_message: Some(ReactionMessage {
+                key: Some(wa::MessageKey {
+                    remote_jid: Some(self.info.source.chat.to_string()),
+                    from_me: Some(false),
+                    id: Some(self.info.id.to_string()),
+                    participant: Some(self.info.source.sender.to_string()),
+                }),
+                text: Some(emoji.to_string()),
+                sender_timestamp_ms: Some(
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as i64
+                ),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        
+        Ok(self.client.send_message(self.info.source.chat.clone(), reaction).await?)
+    }
     pub async fn reply(&self, text: &str) -> anyhow::Result<String> {
         let msg_id = crate::send_msg!(
             self.client,
