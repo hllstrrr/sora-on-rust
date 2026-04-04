@@ -1,7 +1,7 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct AppConfig {
     pub prefixes: Vec<String>,
     pub session_path: String,
@@ -9,6 +9,7 @@ pub struct AppConfig {
     pub mode: String,
     #[serde(skip)]
     pub phone_number: String,
+    #[serde(skip_serializing)]
     pub superuser: Option<String>,
 }
 
