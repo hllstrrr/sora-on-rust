@@ -25,6 +25,17 @@ async fn main() -> anyhow::Result<()> {
     let state = state::AppState::load(config.clone());
     let mut bot = client::create_bot(config, state).await?;
     info!("Starting Bot...");
-    bot.run().await?.await?;
+    
+    let client = bot.client().clone();
+    let bot_handle = bot.run().await?;
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            info!("SIGINT received, Performing graceful shutdown...");
+            client.disconnect().await;
+        }
+        res = bot_handle => {
+            res?;
+        }
+    }
     Ok(())
 }
