@@ -1,13 +1,13 @@
-use async_trait::async_trait;
-use std::sync::LazyLock;
-use whatsapp_rust::client::Client;
-use wacore::types::message::MessageInfo;
-use waproto::whatsapp::Message;
-use linkme::distributed_slice;
-use waproto::whatsapp as wa;
-use waproto::whatsapp::message::ReactionMessage;
 use crate::state::AppState;
+use async_trait::async_trait;
+use linkme::distributed_slice;
+use std::sync::LazyLock;
 use std::{collections::HashMap, sync::Arc};
+use wacore::types::message::MessageInfo;
+use waproto::whatsapp as wa;
+use waproto::whatsapp::Message;
+use waproto::whatsapp::message::ReactionMessage;
+use whatsapp_rust::client::Client;
 
 pub struct Context<'a> {
     pub client: Arc<Client>,
@@ -33,21 +33,20 @@ impl<'a> Context<'a> {
                     std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
-                        .as_millis() as i64
+                        .as_millis() as i64,
                 ),
                 ..Default::default()
             }),
             ..Default::default()
         };
-        
-        self.client.send_message(self.info.source.chat.clone(), reaction).await
+
+        self.client
+            .send_message(self.info.source.chat.clone(), reaction)
+            .await
     }
     pub async fn reply(&self, text: &str) -> anyhow::Result<String> {
         let msg_id = crate::send_msg!(
-            self.client,
-            self.msg,
-            self.info,
-            self.state,
+            context: self,
             dst: self.info.source.chat,
             text: text,
             reply: true
@@ -88,14 +87,14 @@ macro_rules! cmd {
     };
 }
 
-
-pub static COMMAND_MAP: LazyLock<HashMap<String, &'static (dyn Command + Sync)>> = LazyLock::new(|| {
-    let mut map = HashMap::with_capacity(COMMANDS.len() * 2);
-    for &cmd in COMMANDS {
-        map.insert(cmd.name().to_lowercase(), cmd);
-        for alias in cmd.aliases() {
-            map.insert(alias.to_lowercase(), cmd);
+pub static COMMAND_MAP: LazyLock<HashMap<String, &'static (dyn Command + Sync)>> =
+    LazyLock::new(|| {
+        let mut map = HashMap::with_capacity(COMMANDS.len() * 2);
+        for &cmd in COMMANDS {
+            map.insert(cmd.name().to_lowercase(), cmd);
+            for alias in cmd.aliases() {
+                map.insert(alias.to_lowercase(), cmd);
+            }
         }
-    }
-    map
-});
+        map
+    });
