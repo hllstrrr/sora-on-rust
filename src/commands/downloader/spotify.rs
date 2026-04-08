@@ -1,7 +1,7 @@
 use crate::cmd;
 use serde::{Deserialize, Serialize};
-use wacore::download::MediaType;
-use waproto::whatsapp as wa;
+use wacore::{download::MediaType, proto_helpers::build_quote_context_with_info};
+use waproto::whatsapp::{self as wa};
 #[derive(Serialize, Debug)]
 struct Song {
     url: String,
@@ -50,11 +50,18 @@ cmd!(
             render_larger_thumbnail: Some(true),
             ..Default::default()
         };
-        let context_info = wa::ContextInfo {
-            external_ad_reply: Some(ad_reply),
-            expiration: Some(expiration),
-            ..Default::default()
-        };
+        let chat_jid = ctx.info.source.chat.to_string();
+        let mut context_info = build_quote_context_with_info(
+            &ctx.info.id,
+            &ctx.info.source.sender,
+            &ctx.info.source.chat,
+            ctx.msg,
+        );
+        context_info.remote_jid = Some(chat_jid);
+        context_info.external_ad_reply = Some(ad_reply);
+        if expiration > 0 {
+            context_info.expiration = Some(expiration);
+        }
 
         let audio_msg = wa::Message {
             audio_message: Some(Box::new(wa::message::AudioMessage {
