@@ -21,6 +21,8 @@ pub struct ChatSettings {
 }
 
 pub struct AppState {
+    pub http_client: reqwest::Client,
+    pub spotify_search_client: tokio::sync::RwLock<spotapi::SpotifySearch>,
     pub settings: DashMap<String, ChatSettings>,
     pub db: sled::Db,
     pub start_time: Instant,
@@ -34,7 +36,7 @@ impl AppState {
         let start_time = Instant::now();
         let db = sled::Config::new().path("database/chat").cache_capacity(10 * 1024 * 1024).mode(sled::Mode::HighThroughput).open().expect("Errpr opening sled database");
         let settings = DashMap::new();
-
+        let http_client = reqwest::Client::builder().redirect(reqwest::redirect::Policy::default()).cookie_store(true).build().unwrap();
         // hydration from db to cache
         for item in db.iter() {
             if let Ok((key, value)) = item {
@@ -49,6 +51,8 @@ impl AppState {
         }
 
         Arc::new(Self {
+            http_client,
+            spotify_search_client: tokio::sync::RwLock::new(spotapi::SpotifySearch::new()),
             settings,
             db,
             start_time,
