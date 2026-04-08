@@ -21,4 +21,5 @@ pub mod root {
 }
 pub mod tools {
     pub mod debug;
+    pub mod rvo;
 }
