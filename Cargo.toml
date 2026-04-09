@@ -1,6 +1,6 @@
 [package]
 name = "sora-on-rust"
-version = "0.1.5"
+version = "0.1.8"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,7 +11,7 @@ whatsapp-rust-tokio-transport = "0.5"
 whatsapp-rust-ureq-http-client = "0.5"
 wacore = "0.5"
 waproto = "0.5"
-tokio = { version = "1.50", features = ["macros", "rt-multi-thread", "fs", "process"] }
+tokio = { version = "1.51", features = ["macros", "rt-multi-thread", "fs", "process"] }
 log = "0.4.29"
 env_logger = "0.11.10"
 chrono = "0.4.44"
@@ -19,7 +19,7 @@ async-trait = "0.1.89"
 linkme = "0.3.35"
 anyhow = "1.0.102"
 serde = { version = "1.0.228", features = ["derive"] }
-toml = "1.1.0"
+toml = "1.1.2"
 dotenvy = "0.15.7"
 dashmap = { version = "6.1.0", features = ["serde"]}
 mimalloc = "0.1.48"
