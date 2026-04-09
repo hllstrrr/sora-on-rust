@@ -88,7 +88,34 @@ async fn handle_message(
         let prefixes = state.get_prefixes();
         let prefix = match prefixes.iter().find(|p| text.starts_with(p.as_str())) {
             Some(p) => p.to_string(),
-            None => return,
+            None => {
+                let client_clone = Arc::clone(&client);
+                let chat_jid = info.source.chat;
+                let sender_jid = info.source.sender.to_string();
+                let msg_id = info.id;
+                tokio::spawn(async move {
+                    let warmup_reaction = waproto::whatsapp::Message {
+                        reaction_message: Some(waproto::whatsapp::message::ReactionMessage {
+                            key: Some(waproto::whatsapp::MessageKey {
+                                remote_jid: Some(chat_jid.to_string()),
+                                from_me: Some(false),
+                                id: Some(msg_id),
+                                participant: Some(sender_jid),
+                            }),
+                            text: Some("".to_string()),
+                            sender_timestamp_ms: Some(chrono::Utc::now().timestamp_millis()),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    };
+
+                    let _ = client_clone
+                        .send_message(chat_jid, warmup_reaction)
+                        .await;
+                });
+
+                return;
+            }
         };
         let cmd_name = text
             .strip_prefix(&prefix)
