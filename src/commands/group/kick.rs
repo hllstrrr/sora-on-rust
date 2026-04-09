@@ -27,7 +27,7 @@ cmd!(
 
         println!("{:?}", targets);
 
-        if ctx.args[0] == "random" {
+        if ctx.body == "random" {
             let info = ctx.client.groups().query_info(&ctx.info.source.chat).await?;
             let participants = info.participants;
             if let Some(random_jid) = participants.choose(&mut rand::rng()) {
