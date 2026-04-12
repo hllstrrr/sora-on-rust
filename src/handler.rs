@@ -69,6 +69,10 @@ async fn handle_message(
     info: MessageInfo,
     state: Arc<AppState>,
 ) {
+    let msg_timestamp = Utc::now() - info.timestamp;
+    if msg_timestamp.to_std().unwrap_or_default() > state.start_time.elapsed() {
+        return;
+    }
     println!(
         "Incoming Message from {} ({}): {:?}",
         &info.push_name,
@@ -109,9 +113,7 @@ async fn handle_message(
                         ..Default::default()
                     };
 
-                    let _ = client_clone
-                        .send_message(chat_jid, warmup_reaction)
-                        .await;
+                    let _ = client_clone.send_message(chat_jid, warmup_reaction).await;
                 });
 
                 return;
@@ -124,11 +126,7 @@ async fn handle_message(
             .next()
             .unwrap_or("")
             .to_lowercase();
-        // println!("{}", &info_arc.source.sender.user);
-        let msg_timestamp = Utc::now() - info.timestamp;
-        if msg_timestamp.to_std().unwrap_or_default() > state.start_time.elapsed() {
-            return;
-        }
+        
         if let Some(cmd) = crate::commands::cmd::COMMAND_MAP.get(&cmd_name) {
             let privileged = is_privileged(info.source.sender.user.as_str(), &info, &config).await;
             let category = cmd.category();
