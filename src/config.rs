@@ -7,6 +7,7 @@ pub struct AppConfig {
     pub session_path: String,
     pub custom_code: String,
     pub mode: String,
+    pub warmup: String,
     #[serde(skip)]
     pub phone_number: String,
     #[serde(skip_serializing)]

@@ -3,6 +3,9 @@ use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 use waproto::whatsapp::Message;
+use whatsapp_rust::client::Client;
+use whatsapp_rust::Jid;
+use waproto::whatsapp as wa;
 
 use crate::state::AppState;
 
@@ -115,4 +118,29 @@ pub async fn generate_video_thumbnail(video_bytes: &[u8]) -> anyhow::Result<Vec<
     } else {
         Err(anyhow::anyhow!("ffmpeg: unable to process the video"))
     }
+}
+
+pub async fn send_warmup(
+    client: Arc<Client>,
+    chat_jid: Jid,
+    msg_id: String,
+    participant: Option<String>,
+) -> anyhow::Result<()> {
+    let warmup_msg = wa::Message {
+        reaction_message: Some(wa::message::ReactionMessage {
+            key: Some(wa::MessageKey {
+                remote_jid: Some(chat_jid.to_string()),
+                from_me: Some(false),
+                id: Some(msg_id),
+                participant,
+            }),
+            text: Some("".to_string()),
+            sender_timestamp_ms: Some(chrono::Utc::now().timestamp_millis()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    client.send_message(chat_jid, warmup_msg).await?;
+    Ok(())
 }

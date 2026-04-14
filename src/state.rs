@@ -24,6 +24,7 @@ pub struct ChatSettings {
 pub struct AppState {
     pub http_client: reqwest::Client,
     pub settings: DashMap<String, ChatSettings>,
+    pub last_messages: DashMap<String, (String, Option<String>)>,
     pub db: sled::Db,
     pub start_time: Instant,
     pub config: Arc<AppConfig>,
@@ -41,6 +42,7 @@ impl AppState {
             .open()
             .expect("Errpr opening sled database");
         let settings = DashMap::new();
+        let last_messages = DashMap::new();
         let mut headers = HeaderMap::new();
         headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"));
         headers.insert(ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,video/mp4,*/*;q=0.8"));
@@ -67,6 +69,7 @@ impl AppState {
         Arc::new(Self {
             http_client,
             settings,
+            last_messages,
             db,
             start_time,
             mode: RwLock::new(config.mode.clone()),

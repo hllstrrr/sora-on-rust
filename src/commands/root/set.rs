@@ -41,6 +41,7 @@ cmd!(
                 superuser: state.config.superuser.clone(),
                 custom_code: state.config.custom_code.clone(),
                 session_path: state.config.session_path.clone(),
+                warmup: state.config.warmup.clone(),
                 mode: state.get_mode(),
                 prefixes: state.get_prefixes(),
             };

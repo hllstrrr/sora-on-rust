@@ -104,36 +104,38 @@ async fn handle_message(
             }
         }
 
+        let warmup_mode = config.warmup.as_str();
+
+        if warmup_mode == "high" {
+            state.last_messages.insert(
+                info.source.chat.to_string(), 
+                (info.id.clone(), Some(info.source.sender.to_string()))
+            );
+        }
+
         let prefixes = state.get_prefixes();
+        let is_command = prefixes.iter().any(|p| text.starts_with(p.as_str()));
+        let should_warmup = match warmup_mode {
+            "high" => true,
+            "normal" => !is_command,
+            _ => false,
+        };
+        if should_warmup {
+            let client_clone = Arc::clone(&client);
+            let chat_jid = info.source.chat.clone();
+            let sender_jid = info.source.sender.to_string();
+            let msg_id = info.id.clone();
+            
+            tokio::spawn(async move {
+                let _ = crate::utils::send_warmup(client_clone, chat_jid, msg_id, Some(sender_jid)).await;
+            });
+        }
+        
         let prefix = match prefixes.iter().find(|p| text.starts_with(p.as_str())) {
             Some(p) => p.to_string(),
-            None => {
-                let client_clone = Arc::clone(&client);
-                let chat_jid = info.source.chat;
-                let sender_jid = info.source.sender.to_string();
-                let msg_id = info.id;
-                tokio::spawn(async move {
-                    let warmup_reaction = waproto::whatsapp::Message {
-                        reaction_message: Some(waproto::whatsapp::message::ReactionMessage {
-                            key: Some(waproto::whatsapp::MessageKey {
-                                remote_jid: Some(chat_jid.to_string()),
-                                from_me: Some(false),
-                                id: Some(msg_id),
-                                participant: Some(sender_jid),
-                            }),
-                            text: Some("".to_string()),
-                            sender_timestamp_ms: Some(chrono::Utc::now().timestamp_millis()),
-                            ..Default::default()
-                        }),
-                        ..Default::default()
-                    };
-
-                    let _ = client_clone.send_message(chat_jid, warmup_reaction).await;
-                });
-
-                return;
-            }
+            None => return 
         };
+        
         let cmd_name = text
             .strip_prefix(&prefix)
             .unwrap_or(text)
