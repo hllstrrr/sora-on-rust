@@ -12,6 +12,7 @@ pub mod group {
     pub mod demote;
     pub mod gc;
     pub mod kick;
+    pub mod mute;
     pub mod promote;
 }
 pub mod root {
