@@ -1,7 +1,6 @@
 pub mod cmd;
 pub mod downloader {
     pub mod reels;
-    pub mod spotify;
 }
 pub mod general {
     pub mod info;

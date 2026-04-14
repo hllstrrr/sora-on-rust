@@ -23,7 +23,6 @@ pub struct ChatSettings {
 
 pub struct AppState {
     pub http_client: reqwest::Client,
-    pub spotify_search_client: tokio::sync::RwLock<spotapi::SpotifySearch>,
     pub settings: DashMap<String, ChatSettings>,
     pub db: sled::Db,
     pub start_time: Instant,
@@ -67,7 +66,6 @@ impl AppState {
 
         Arc::new(Self {
             http_client,
-            spotify_search_client: tokio::sync::RwLock::new(spotapi::SpotifySearch::new()),
             settings,
             db,
             start_time,
