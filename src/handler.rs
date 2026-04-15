@@ -113,13 +113,13 @@ async fn handle_message(
             if warmup_mode == "high" || warmup_mode == "normal" {
                 if warmup_mode == "high" {
                     state.last_messages.insert(
-                        info.source.chat.to_string(),
+                        info.source.chat.clone(),
                         (info.id.clone(), Some(info.source.sender.to_string())),
                     );
                 }
 
                 let client_clone = Arc::clone(&client);
-                let chat_jid = info.source.chat.clone();
+                let chat_jid = info.source.chat;
                 let sender_jid = info.source.sender.to_string();
                 let msg_id = info.id.clone();
 

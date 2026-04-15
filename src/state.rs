@@ -24,12 +24,12 @@ pub struct ChatSettings {
 pub struct AppState {
     pub http_client: reqwest::Client,
     pub settings: DashMap<String, ChatSettings>,
-    pub last_messages: DashMap<String, (String, Option<String>)>,
+    pub last_messages: DashMap<whatsapp_rust::Jid, (String, Option<String>)>,
     pub db: sled::Db,
     pub start_time: Instant,
     pub config: Arc<AppConfig>,
     pub mode: RwLock<String>,
-    pub prefixes: RwLock<Vec<String>>,
+    pub prefixes: RwLock<Arc<Vec<String>>>,
 }
 
 impl AppState {
@@ -73,7 +73,7 @@ impl AppState {
             db,
             start_time,
             mode: RwLock::new(config.mode.clone()),
-            prefixes: RwLock::new(config.prefixes.clone()),
+            prefixes: RwLock::new(Arc::new(config.prefixes.clone())),
             config,
         })
     }
@@ -102,10 +102,9 @@ impl AppState {
         self.mode.read().unwrap().clone()
     }
 
-    pub fn get_prefixes(&self) -> Vec<String> {
+    pub fn get_prefixes(&self) -> Arc<Vec<String>> {
         self.prefixes.read().unwrap().clone()
     }
-
     pub fn set_config(&self, key: ConfigKey, value: ConfigValue) -> Result<(), &'static str> {
         match (key, value) {
             (ConfigKey::Mode, ConfigValue::Text(val)) => {
@@ -115,7 +114,7 @@ impl AppState {
             }
             (ConfigKey::Prefixes, ConfigValue::List(val)) => {
                 let mut prefixes = self.prefixes.write().unwrap();
-                *prefixes = val;
+                *prefixes = val.into();
                 Ok(())
             }
             _ => Err("invalid datatype for this field"),
