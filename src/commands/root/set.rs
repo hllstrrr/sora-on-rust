@@ -44,7 +44,7 @@ cmd!(
                 warmup: state.config.warmup.clone(),
                 warmup_interval: state.config.warmup_interval,
                 mode: state.get_mode(),
-                prefixes: state.get_prefixes(),
+                prefixes: state.get_prefixes().to_vec(),
             };
 
             if let Ok(toml_string) = toml::to_string(&updated_config)
