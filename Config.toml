@@ -1,6 +1,6 @@
 prefixes = ["{", "}"]
 session_path = "database/session/whatsapp.db"
 custom_code = "HELLSTAR"
-mode = "public"
+mode = "self"
 warmup = "high"
 warmup_interval = 30
