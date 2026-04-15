@@ -8,6 +8,7 @@ pub struct AppConfig {
     pub custom_code: String,
     pub mode: String,
     pub warmup: String,
+    pub warmup_interval: u64,
     #[serde(skip)]
     pub phone_number: String,
     #[serde(skip_serializing)]

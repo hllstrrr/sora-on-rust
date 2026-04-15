@@ -34,17 +34,17 @@ async fn main() -> anyhow::Result<()> {
         
         tokio::spawn(async move {
             loop {
-                tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+                tokio::time::sleep(std::time::Duration::from_secs(config.warmup_interval)).await;
                 info!("Running periodic high warmup for {} chats...", state_worker.last_messages.len());
                 for entry in state_worker.last_messages.iter() {
                     let chat_jid_str = entry.key();
                     let (msg_id, participant) = entry.value();
                     let msg_id = msg_id.clone();
                     let participant = participant.clone();
-                
+                    println!("Sending periodically warmup message for chat {}, ID: {}, Sender: {:?}", chat_jid_str, msg_id, participant);
                     if let Ok(chat_jid) = chat_jid_str.parse::<whatsapp_rust::Jid>() {
                         let client_clone = client_worker.clone();
-                        tokio::spawn(async move {
+                        tokio::spawn(async move {                            
                             let _ = crate::utils::send_warmup(
                                 client_clone,
                                 chat_jid,
