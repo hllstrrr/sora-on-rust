@@ -105,39 +105,36 @@ async fn handle_message(
         }
 
         let prefixes = state.get_prefixes();
-        let is_command = prefixes.iter().any(|p| text.starts_with(p.as_str()));
-        
+        let found_prefix = prefixes.iter().find(|p| text.starts_with(p.as_str()));
+        let is_command = found_prefix.is_some();
         let warmup_mode = config.warmup.as_str();
-        if !is_command && warmup_mode == "high" {
-            state.last_messages.insert(
-                info.source.chat.to_string(),
-                (info.id.clone(), Some(info.source.sender.to_string())),
-            );
+
+        if !is_command {
+            if warmup_mode == "high" || warmup_mode == "normal" {
+                if warmup_mode == "high" {
+                    state.last_messages.insert(
+                        info.source.chat.to_string(),
+                        (info.id.clone(), Some(info.source.sender.to_string())),
+                    );
+                }
+
+                let client_clone = Arc::clone(&client);
+                let chat_jid = info.source.chat.clone();
+                let sender_jid = info.source.sender.to_string();
+                let msg_id = info.id.clone();
+
+                tokio::spawn(async move {
+                    let _ =
+                        crate::utils::send_warmup(client_clone, chat_jid, msg_id, Some(sender_jid))
+                            .await;
+                });
+            }
+            return;
         }
-        let should_warmup = match warmup_mode {
-            "high" => !is_command,
-            "normal" => !is_command,
-            _ => false,
-        };
-        if should_warmup {
-            let client_clone = Arc::clone(&client);
-            let chat_jid = info.source.chat.clone();
-            let sender_jid = info.source.sender.to_string();
-            let msg_id = info.id.clone();
 
-            tokio::spawn(async move {
-                let _ = crate::utils::send_warmup(client_clone, chat_jid, msg_id, Some(sender_jid))
-                    .await;
-            });
-        }
-
-        let prefix = match prefixes.iter().find(|p| text.starts_with(p.as_str())) {
-            Some(p) => p.to_string(),
-            None => return,
-        };
-
+        let prefix = found_prefix.unwrap().to_string();
         let cmd_name = text
-            .strip_prefix(&prefix)
+            .strip_prefix(prefix.as_str())
             .unwrap_or(text)
             .split_whitespace()
             .next()
@@ -178,7 +175,7 @@ async fn handle_message(
                 let _ = client.chatstate().send_composing(&info.source.chat).await;
                 let base = msg
                     .text_content()
-                    .map(|t| t.strip_prefix(&prefix).unwrap_or(t))
+                    .map(|t| t.strip_prefix(prefix.as_str()).unwrap_or(t))
                     .unwrap_or("");
                 let args: Vec<&str> = base.split_whitespace().skip(1).collect();
                 let body = base
