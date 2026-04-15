@@ -107,7 +107,7 @@ async fn handle_message(
         let prefixes = state.get_prefixes();
         let found_prefix = prefixes.iter().find(|p| text.starts_with(p.as_str()));
         let is_command = found_prefix.is_some();
-        let warmup_mode = config.warmup.as_str();
+        let warmup_mode = state.get_warmup();
 
         if !is_command {
             if warmup_mode == "high" || warmup_mode == "normal" {

@@ -34,14 +34,16 @@ async fn main() -> anyhow::Result<()> {
 
     let client = bot.client().clone();
     let bot_handle = bot.run().await?;
-    if config.warmup == "high" {
-        let state_worker = state;
-        let client_worker = bot.client().clone();
 
-        tokio::spawn(async move {
-            loop {
-                tokio::time::sleep(std::time::Duration::from_secs(config.warmup_interval)).await;
+    let state_worker = state.clone();
+    let client_worker = bot.client().clone();
 
+    tokio::spawn(async move {
+        loop {
+            let current_warmup = state_worker.get_warmup();
+            let current_interval = state_worker.get_warmup_interval();
+
+            if current_warmup == "high" {
                 let targets: Vec<_> = state_worker
                     .last_messages
                     .iter()
@@ -54,22 +56,33 @@ async fn main() -> anyhow::Result<()> {
                     })
                     .collect();
 
-                info!(
-                    "Running periodic high warmup for {} chats...",
-                    targets.len()
-                );
+                if !targets.is_empty() {
+                    info!(
+                        "Running periodic high warmup for {} chats (Interval: {}s)...",
+                        targets.len(),
+                        current_interval
+                    );
 
-                for (chat_jid, msg_id, participant) in targets {
-                    let client_clone = client_worker.clone();
-                    tokio::spawn(async move {
-                        let _ =
-                            crate::utils::send_warmup(client_clone, chat_jid, msg_id, participant)
-                                .await;
-                    });
+                    for (chat_jid, msg_id, participant) in targets {
+                        let client_clone = client_worker.clone();
+                        tokio::spawn(async move {
+                            let _ = crate::utils::send_warmup(
+                                client_clone,
+                                chat_jid,
+                                msg_id,
+                                participant,
+                            )
+                            .await;
+                        });
+                    }
                 }
+
+                tokio::time::sleep(std::time::Duration::from_secs(current_interval)).await;
+            } else {
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             }
-        });
-    }
+        }
+    });
 
     tokio::select! {
         _ = tokio::signal::ctrl_c() => {
