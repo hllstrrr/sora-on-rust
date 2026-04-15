@@ -42,6 +42,7 @@ cmd!(
                 custom_code: state.config.custom_code.clone(),
                 session_path: state.config.session_path.clone(),
                 warmup: state.config.warmup.clone(),
+                warmup_interval: state.config.warmup_interval,
                 mode: state.get_mode(),
                 prefixes: state.get_prefixes(),
             };

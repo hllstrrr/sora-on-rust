@@ -104,19 +104,18 @@ async fn handle_message(
             }
         }
 
-        let warmup_mode = config.warmup.as_str();
-
-        if warmup_mode == "high" {
-            state.last_messages.insert(
-                info.source.chat.to_string(), 
-                (info.id.clone(), Some(info.source.sender.to_string()))
-            );
-        }
-
         let prefixes = state.get_prefixes();
         let is_command = prefixes.iter().any(|p| text.starts_with(p.as_str()));
+        
+        let warmup_mode = config.warmup.as_str();
+        if !is_command && warmup_mode == "high" {
+            state.last_messages.insert(
+                info.source.chat.to_string(),
+                (info.id.clone(), Some(info.source.sender.to_string())),
+            );
+        }
         let should_warmup = match warmup_mode {
-            "high" => true,
+            "high" => !is_command,
             "normal" => !is_command,
             _ => false,
         };
@@ -125,17 +124,18 @@ async fn handle_message(
             let chat_jid = info.source.chat.clone();
             let sender_jid = info.source.sender.to_string();
             let msg_id = info.id.clone();
-            
+
             tokio::spawn(async move {
-                let _ = crate::utils::send_warmup(client_clone, chat_jid, msg_id, Some(sender_jid)).await;
+                let _ = crate::utils::send_warmup(client_clone, chat_jid, msg_id, Some(sender_jid))
+                    .await;
             });
         }
-        
+
         let prefix = match prefixes.iter().find(|p| text.starts_with(p.as_str())) {
             Some(p) => p.to_string(),
-            None => return 
+            None => return,
         };
-        
+
         let cmd_name = text
             .strip_prefix(&prefix)
             .unwrap_or(text)
@@ -143,7 +143,7 @@ async fn handle_message(
             .next()
             .unwrap_or("")
             .to_lowercase();
-        
+
         if let Some(cmd) = crate::commands::cmd::COMMAND_MAP.get(&cmd_name) {
             let privileged = is_privileged(info.source.sender.user.as_str(), &info, &config).await;
             let category = cmd.category();
