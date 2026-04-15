@@ -2,10 +2,10 @@ use std::process::Stdio;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
-use waproto::whatsapp::Message;
-use whatsapp_rust::client::Client;
-use whatsapp_rust::Jid;
 use waproto::whatsapp as wa;
+use waproto::whatsapp::Message;
+use whatsapp_rust::Jid;
+use whatsapp_rust::client::Client;
 
 use crate::state::AppState;
 
@@ -71,12 +71,11 @@ impl MessageExt for Message {
     }
 }
 pub async fn get_media_bytes(state: Arc<AppState>, data: Vec<u8>) -> anyhow::Result<Vec<u8>> {
-    if let Ok(url_str) = String::from_utf8(data.clone())
-        && url_str.starts_with("http")
-    {
-        let resp = state.http_client.get(url_str).send().await?;
-        return Ok(resp.bytes().await?.to_vec());
-    }
+    if let Ok(url_str) = std::str::from_utf8(&data)
+        && url_str.starts_with("http") {
+            let resp = state.http_client.get(url_str).send().await?;
+            return Ok(resp.bytes().await?.to_vec());
+        }
     Ok(data)
 }
 
