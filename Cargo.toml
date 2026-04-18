@@ -9,7 +9,7 @@ async-trait = "0.1.89"
 chrono = "0.4.44"
 dotenvy = "0.15.7"
 env_logger = "0.11.10"
-linkme = "0.3.35"
+linkme = "0.3.36"
 log = "0.4.29"
 mimalloc = "0.1.48"
 sled = "0.34.7"
@@ -37,7 +37,7 @@ version = "1.0.228"
 features = ["derive"]
 
 [dependencies.tokio]
-version = "1.51"
+version = "1.52"
 features = ["macros", "rt-multi-thread", "fs", "process"]
 
 [dependencies.whatsapp-rust]
