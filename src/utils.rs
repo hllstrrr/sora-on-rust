@@ -70,6 +70,7 @@ impl MessageExt for Message {
         None
     }
 }
+
 pub async fn get_media_bytes(state: Arc<AppState>, data: Vec<u8>) -> anyhow::Result<Vec<u8>> {
     if let Ok(url_str) = std::str::from_utf8(&data)
         && url_str.starts_with("http") {
@@ -106,12 +107,18 @@ pub async fn generate_video_thumbnail(video_bytes: &[u8]) -> anyhow::Result<Vec<
         .take()
         .ok_or_else(|| anyhow::anyhow!("Unable to open stdin ffmpeg"))?;
 
-    let video_vec = video_bytes.to_vec();
-    tokio::spawn(async move {
-        let _ = stdin.write_all(&video_vec).await;
-    });
+        let (output, write_res) = tokio::join!(
+            child.wait_with_output(),
+            async {
+                let res = stdin.write_all(video_bytes).await;
+                drop(stdin);
+                res
+            }
+        );
+    
+        let output = output?;
+        write_res?;
 
-    let output = child.wait_with_output().await?;
     if output.status.success() {
         Ok(output.stdout)
     } else {

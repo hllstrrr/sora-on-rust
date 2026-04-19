@@ -18,7 +18,7 @@ macro_rules! send_video {
             let info = &$ctx.info;
             let state = &$ctx.state;
             let raw_data: Vec<u8> = $data.into();
-            let video_bytes = $crate::utils::get_media_bytes(Arc::clone(state), raw_data).await?;
+            let video_bytes = $crate::utils::get_media_bytes(Arc::clone(&state), raw_data).await?;
             let thumbnail_bytes = $crate::utils::generate_video_thumbnail(&video_bytes).await.ok();
 
             let upload = client.upload(video_bytes, MediaType::Video).await?;
