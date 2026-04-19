@@ -1,7 +1,7 @@
 use sysinfo::{Disks, Pid, System};
 
 use crate::commands::cmd::{COMMANDS};
-use crate::cmd;
+use crate::{GLOBAL, cmd};
 use std::collections::HashSet;
 
 fn get_memory_usage(sys: &System) -> String {
@@ -65,7 +65,7 @@ cmd!(
         let lib_version = get_lib_version();
         let compiler_version = env!("RUSTC_VERSION");
         let os_name = get_os_name();
-        let allocator = "mimalloc";
+        let allocator = GLOBAL;
 
         let mut categories = HashSet::new();
         for cmd in COMMANDS.iter() {
@@ -100,13 +100,13 @@ Library: whatsapp-rust v{}
 Compiler: {}
 OS: {}
 Memory Usage: {}
-Allocator: {}
+Allocator: {:?}
 
 STATISTICS
 ----------
 Total Commands: {}
 Total Categories: {}
-Current Mode: {}
+Current Mode: {:?}
 Active Prefix: {:?}
 Uptime: {}
 
