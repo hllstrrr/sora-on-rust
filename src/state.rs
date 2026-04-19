@@ -1,10 +1,10 @@
 use dashmap::DashMap;
-use reqwest::header::{ACCEPT, ACCEPT_LANGUAGE, HeaderMap, HeaderValue, USER_AGENT};
+// use reqwest::header::{ACCEPT, ACCEPT_LANGUAGE, HeaderMap, HeaderValue, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
-use crate::config::AppConfig;
+use crate::config::{AppConfig, BotMode, WarmupMode};
 
 pub enum ConfigKey {
     Mode,
@@ -31,9 +31,9 @@ pub struct AppState {
     pub db: sled::Db,
     pub start_time: Instant,
     pub config: Arc<AppConfig>,
-    pub mode: RwLock<String>,
+    pub mode: RwLock<BotMode>,
     pub prefixes: RwLock<Arc<Vec<String>>>,
-    pub warmup: RwLock<String>,
+    pub warmup: RwLock<WarmupMode>,
     pub warmup_interval: RwLock<u64>,
 }
 
@@ -48,18 +48,20 @@ impl AppState {
             .expect("Errpr opening sled database");
         let settings = DashMap::new();
         let last_messages = DashMap::new();
-        let mut headers = HeaderMap::new();
-        headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"));
-        headers.insert(ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,video/mp4,*/*;q=0.8"));
-        headers.insert(ACCEPT_LANGUAGE, HeaderValue::from_static("en-US,en;q=0.5"));
-        let http_client = reqwest::Client::builder()
-            .default_headers(headers)
-            .tcp_keepalive(std::time::Duration::from_secs(60))
-            .pool_idle_timeout(std::time::Duration::from_secs(90))
-            .pool_max_idle_per_host(10)
-            .build()
-            .unwrap();
-        // let http_client = reqwest::Client::new();
+        // let mut headers = HeaderMap::new();
+        // headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"));
+        // headers.insert(ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,video/mp4,*/*;q=0.8"));
+        // headers.insert(ACCEPT_LANGUAGE, HeaderValue::from_static("en-US,en;q=0.5"));
+        // let http_client = reqwest::Client::builder()
+        //     .default_headers(headers)
+        //     .tcp_keepalive(std::time::Duration::from_secs(60))
+        //     .pool_idle_timeout(std::time::Duration::from_secs(90))
+        //     .pool_max_idle_per_host(10)
+        //     .build()
+        //     .unwrap();
+
+        let http_client = reqwest::Client::new();
+        
         // hydration from db to cache
         for (key, value) in db.iter().flatten() {
             let jid = String::from_utf8_lossy(&key).to_string();
@@ -77,9 +79,9 @@ impl AppState {
             last_messages,
             db,
             start_time,
-            mode: RwLock::new(config.mode.clone()),
             prefixes: RwLock::new(Arc::new(config.prefixes.clone())),
-            warmup: RwLock::new(config.warmup.clone()),
+            mode: RwLock::new(config.mode),
+            warmup: RwLock::new(config.warmup),
             warmup_interval: RwLock::new(config.warmup_interval),
             config,
         })
@@ -105,16 +107,16 @@ impl AppState {
         self.settings.get(jid).map(|s| s.expiration).unwrap_or(0)
     }
 
-    pub fn get_mode(&self) -> String {
-        self.mode.read().unwrap().clone()
+    pub fn get_mode(&self) -> BotMode {
+        *self.mode.read().unwrap()
     }
 
     pub fn get_prefixes(&self) -> Arc<Vec<String>> {
         self.prefixes.read().unwrap().clone()
     }
 
-    pub fn get_warmup(&self) -> String {
-        self.warmup.read().unwrap().clone()
+    pub fn get_warmup(&self) -> WarmupMode {
+        *self.warmup.read().unwrap()
     }
 
     pub fn get_warmup_interval(&self) -> u64 {
@@ -125,7 +127,11 @@ impl AppState {
         match (key, value) {
             (ConfigKey::Mode, ConfigValue::Text(val)) => {
                 let mut mode = self.mode.write().unwrap();
-                *mode = val;
+                *mode = if val.to_lowercase() == "self" {
+                    BotMode::SelfMode
+                } else {
+                    BotMode::Public
+                };
                 Ok(())
             }
             (ConfigKey::Prefixes, ConfigValue::List(val)) => {
@@ -135,7 +141,7 @@ impl AppState {
             }
             (ConfigKey::Warmup, ConfigValue::Text(val)) => {
                 let mut warmup = self.warmup.write().unwrap();
-                *warmup = val;
+                *warmup = WarmupMode::from(val.as_str());
                 Ok(())
             }
             (ConfigKey::WarmupInterval, ConfigValue::Number(val)) => {

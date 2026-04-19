@@ -1,4 +1,6 @@
 use crate::config::AppConfig;
+use crate::config::BotMode;
+use crate::config::WarmupMode;
 use crate::state::AppState;
 use crate::utils::MessageExt;
 use chrono::Utc;
@@ -110,8 +112,8 @@ async fn handle_message(
         let warmup_mode = state.get_warmup();
 
         if !is_command {
-            if warmup_mode == "high" || warmup_mode == "normal" {
-                if warmup_mode == "high" {
+            if warmup_mode != WarmupMode::Off {
+                if warmup_mode == WarmupMode::High {
                     state.last_messages.insert(
                         info.source.chat.clone(),
                         (info.id.clone(), Some(info.source.sender.to_string())),
@@ -144,7 +146,7 @@ async fn handle_message(
         if let Some(cmd) = crate::commands::cmd::COMMAND_MAP.get(&cmd_name) {
             let privileged = is_privileged(info.source.sender.user.as_str(), &info, &config).await;
             let category = cmd.category();
-            if state.get_mode() == "self" && !privileged {
+            if state.get_mode() == BotMode::SelfMode && !privileged {
                 println!("{}", &info.source.sender.user);
                 println!("Not privileged");
                 return;

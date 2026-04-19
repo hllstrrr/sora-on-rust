@@ -1,13 +1,41 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum BotMode {
+    #[serde(rename = "self")]
+    SelfMode,
+    
+    #[serde(rename = "public")]
+    Public,
+}
+
+impl From<&str> for WarmupMode {
+    fn from(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "high" => WarmupMode::High,
+            "normal" => WarmupMode::Normal,
+            _ => WarmupMode::Off,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum WarmupMode {
+    High,
+    Normal,
+    Off,
+}
+
 #[derive(Deserialize, Serialize, Clone)]
 pub struct AppConfig {
     pub prefixes: Vec<String>,
     pub session_path: String,
     pub custom_code: String,
-    pub mode: String,
-    pub warmup: String,
+    pub mode: BotMode,
+    pub warmup: WarmupMode,
     pub warmup_interval: u64,
     #[serde(skip)]
     pub phone_number: String,

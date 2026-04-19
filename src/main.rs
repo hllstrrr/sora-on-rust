@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
             let current_warmup = state_worker.get_warmup();
             let current_interval = state_worker.get_warmup_interval();
 
-            if current_warmup == "high" {
+            if current_warmup == WarmupMode::High {
                 let targets: Vec<_> = state_worker
                     .last_messages
                     .iter()
