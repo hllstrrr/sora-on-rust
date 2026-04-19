@@ -1,5 +1,8 @@
+#[cfg(target_os = "windows")]
+compile_error!("Sorry but this program and it's author don't want their code to be compiled in garbage OS like Windogs. Please delete your OS and install linux instead. Tq.\n- hllstr");
+
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 #[macro_use]
 mod macros;
 mod client;
@@ -13,8 +16,14 @@ use chrono::Local;
 use log::info;
 use std::sync::Arc;
 
+use crate::config::WarmupMode;
+
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    if cfg!(windows) {
+        panic!("Please delete your garbage OS and install Linux instead to run this program.");
+    }
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .format(|buf, record| {
             use std::io::Write;
