@@ -15,7 +15,12 @@ A Simple, Lightweight and Fast WhatsApp Bot Written on rust.
 
     to run this project as debug (faster build process)
     $ cargo run
-    
+
+
+## Todo
+- ai
+- translate
+  
 ## Acknowledgemnt
 - [whatsapp-rust](https://githuh.com/oxidezap/whatsapp-rust) awesome whatsapp web client api built in rust 
 - [sora](https://githuh.com/hllstr/sora) my dead project as inspiration😂
