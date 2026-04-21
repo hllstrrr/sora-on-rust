@@ -1,5 +1,4 @@
 use dashmap::DashMap;
-use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
@@ -18,16 +17,9 @@ pub enum ConfigValue {
     Number(u64),
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct ChatSettings {
-    pub expiration: u32,
-}
-
 pub struct AppState {
     pub http_client: reqwest::Client,
-    pub settings: DashMap<String, ChatSettings>,
-    pub last_messages: DashMap<whatsapp_rust::Jid, (String, Option<String>)>,
-    pub db: sled::Db,
+    pub cache: DashMap<String, String>,
     pub start_time: Instant,
     pub config: Arc<AppConfig>,
     pub mode: RwLock<BotMode>,
@@ -39,31 +31,12 @@ pub struct AppState {
 impl AppState {
     pub fn load(config: Arc<AppConfig>) -> Arc<Self> {
         let start_time = Instant::now();
-        let db = sled::Config::new()
-            .path("database/chat")
-            .cache_capacity(2 * 1024 * 1024)
-            .open()
-            .expect("Error opening sled database");
-        let settings = DashMap::new();
-        let last_messages = DashMap::new();
+        let cache = DashMap::new();
         let http_client = reqwest::Client::new();
-        
-        // hydration from db to cache
-        for (key, value) in db.iter().flatten() {
-            let jid = String::from_utf8_lossy(&key).to_string();
-
-            if value.len() == 4 {
-                let bytes: [u8; 4] = value.as_ref().try_into().unwrap();
-                let expiration = u32::from_be_bytes(bytes);
-                settings.insert(jid, ChatSettings { expiration });
-            }
-        }
 
         Arc::new(Self {
             http_client,
-            settings,
-            last_messages,
-            db,
+            cache,
             start_time,
             prefixes: RwLock::new(Arc::new(config.prefixes.clone())),
             mode: RwLock::new(config.mode),
@@ -73,24 +46,22 @@ impl AppState {
         })
     }
 
-    pub fn set_expiration(self: Arc<Self>, jid: String, expiration: u32) {
-        if let Some(current) = self.settings.get(&jid)
-            && current.expiration == expiration
-        {
-            return;
-        }
-        let jid_db = jid.clone();
-        self.settings.insert(jid, ChatSettings { expiration });
-        let state_clone = Arc::clone(&self);
-        tokio::task::spawn_blocking(move || {
-            let val_bytes = expiration.to_be_bytes();
-            if let Err(e) = state_clone.db.insert(jid_db, &val_bytes) {
-                log::error!("Error inserting data into sled database: {}", e);
-            }
-        });
+    pub fn set_expiration(&self, jid: String, seconds: u32) {
+        self.cache
+            .insert(format!("exp:{}", jid), seconds.to_string());
     }
+
     pub fn get_expiration(&self, jid: &str) -> u32 {
-        self.settings.get(jid).map(|s| s.expiration).unwrap_or(0)
+        self.cache
+            .get(&format!("exp:{}", jid))
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
+    }
+
+    pub fn set_last_msg_data(&self, chat_jid: &str, msg_id: &str, sender_jid: &str) {
+        let key = format!("last_msg:{}", chat_jid);
+        let value = format!("{}|{}", msg_id, sender_jid);
+        self.cache.insert(key, value);
     }
 
     pub fn get_mode(&self) -> BotMode {
@@ -107,6 +78,24 @@ impl AppState {
 
     pub fn get_warmup_interval(&self) -> u64 {
         *self.warmup_interval.read().unwrap()
+    }
+
+    pub fn set_cache(&self, key: &str, value: &str) {
+        self.cache.insert(key.to_string(), value.to_string());
+
+    }
+
+    // not used yet, but someday I'll be uncommenting this
+    // pub fn get_cache(&self, key: &str) -> Option<String> {
+    //     self.cache.get(key).map(|v| v.value().clone())
+    // }
+
+    pub fn has_cache(&self, key: &str) -> bool {
+        self.cache.contains_key(key)
+    }
+
+    pub fn del_cache(&self, key: &str) {
+        self.cache.remove(key);
     }
 
     pub fn set_config(&self, key: ConfigKey, value: ConfigValue) -> Result<(), &'static str> {

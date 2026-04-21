@@ -12,7 +12,7 @@ cmd!(
         let sender_jid = ctx.info.source.sender.to_non_ad().to_string();
         let key = format!("mute:{}:{}", chat_jid, sender_jid);
 
-        if let Ok(Some(_)) = ctx.state.db.get(&key) {
+        if ctx.state.has_cache(&key) {
             let original_sender = ctx.info.source.sender.clone();
             ctx.client.revoke_message(
                 ctx.info.source.chat.clone(),
@@ -39,14 +39,12 @@ cmd!(
             return Ok(());
         };
         let key = format!("mute:{}:{}", ctx.info.source.chat, target_jid);
-        println!("key: {}", key);
-        let is_muted = ctx.state.db.get(&key)?.is_some();
-        if is_muted {
-            ctx.state.db.remove(&key)?;
-            ctx.react("✅").await?;
+        if ctx.state.has_cache(&key) {
+            ctx.state.del_cache(&key);
+            ctx.react("🔊").await?;
         } else {
-            ctx.state.db.insert(&key, &[1])?;
-            ctx.react("✅").await?;
+            ctx.state.set_cache(&key, "1");
+            ctx.react("🤫").await?;
         }
     }
 );

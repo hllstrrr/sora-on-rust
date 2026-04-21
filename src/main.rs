@@ -1,8 +1,11 @@
 #[cfg(target_os = "windows")]
-compile_error!("Sorry but this program and it's author don't want their code to be compiled in garbage OS like Windogs. Please delete your OS and install linux instead. Tq.\n- hllstr");
+compile_error!(
+    "Sorry but this program and it's author don't want their code to be compiled in garbage OS like Windogs. Please delete your OS and install linux instead. Tq.\n- hllstr"
+);
 
 #[unsafe(no_mangle)]
-pub static malloc_conf: [u8; 73] = *b"background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:1\0";
+pub static malloc_conf: [u8; 73] =
+    *b"background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:1\0";
 
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
@@ -21,7 +24,6 @@ use log::info;
 use std::sync::Arc;
 
 use crate::config::WarmupMode;
-
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -58,14 +60,23 @@ async fn main() -> anyhow::Result<()> {
 
             if current_warmup == WarmupMode::High {
                 let targets: Vec<_> = state_worker
-                    .last_messages
+                    .cache
                     .iter()
-                    .map(|entry| {
-                        (
-                            entry.key().clone(),
-                            entry.value().0.clone(),
-                            entry.value().1.clone(),
-                        )
+                    .filter(|entry| entry.key().starts_with("last_msg:"))
+                    .filter_map(|entry| {
+                        let chat_jid_raw = entry.key().strip_prefix("last_msg:")?;
+                        let chat_jid: whatsapp_rust::Jid = chat_jid_raw.parse().ok()?;
+
+                        let val = entry.value();
+                        let (msg_id, part_raw) = val.split_once('|')?;
+
+                        let participant = if part_raw.is_empty() {
+                            None
+                        } else {
+                            part_raw.parse().ok()
+                        };
+
+                        Some((chat_jid, msg_id.to_string(), participant))
                     })
                     .collect();
 

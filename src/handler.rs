@@ -114,10 +114,7 @@ async fn handle_message(
         if !is_command {
             if warmup_mode != WarmupMode::Off {
                 if warmup_mode == WarmupMode::High {
-                    state.last_messages.insert(
-                        info.source.chat.clone(),
-                        (info.id.clone(), Some(info.source.sender.to_string())),
-                    );
+                    state.set_last_msg_data(&info.source.chat.to_string(), &info.id, &info.source.sender.to_string());
                 }
 
                 let client_clone = Arc::clone(&client);
