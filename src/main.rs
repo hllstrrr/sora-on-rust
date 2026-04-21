@@ -1,8 +1,12 @@
 #[cfg(target_os = "windows")]
 compile_error!("Sorry but this program and it's author don't want their code to be compiled in garbage OS like Windogs. Please delete your OS and install linux instead. Tq.\n- hllstr");
 
+#[unsafe(no_mangle)]
+pub static malloc_conf: [u8; 73] = *b"background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:1\0";
+
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 #[macro_use]
 mod macros;
 mod client;
