@@ -1,4 +1,4 @@
-prefixes = ["{", "}"]
+prefixes = ['"', "'"]
 session_path = "database/session/whatsapp.db"
 custom_code = "HELLSTAR"
 mode = "self"

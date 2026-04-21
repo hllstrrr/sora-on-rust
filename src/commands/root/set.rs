@@ -20,7 +20,7 @@ cmd!(
                 let _ = ctx.state.set_config(ConfigKey::Mode, ConfigValue::Text(val_str.clone()));
                 ctx.react("✅️").await?;
             },
-            "prefixes" => {
+            "prefixes" | "prefix" => {
                 let new_prefixes: Vec<String> = val_str.split(',')
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
