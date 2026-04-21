@@ -73,20 +73,23 @@ impl MessageExt for Message {
 
 pub async fn get_media_bytes(state: Arc<AppState>, data: Vec<u8>) -> anyhow::Result<Vec<u8>> {
     if let Ok(url_str) = std::str::from_utf8(&data)
-        && url_str.starts_with("http") {
-            let resp = state.http_client.get(url_str).send().await?;
-            return Ok(resp.bytes().await?.to_vec());
-        }
+        && url_str.starts_with("http")
+    {
+        let resp = state.http_client.get(url_str).send().await?;
+        return Ok(resp.bytes().await?.to_vec());
+    }
     Ok(data)
 }
 
 pub async fn generate_video_thumbnail(video_bytes: &[u8]) -> anyhow::Result<Vec<u8>> {
+    let data = Arc::new(video_bytes.to_vec());
+
     let mut child = Command::new("ffmpeg")
         .args([
+            "-ss",
+            "00:00:00",
             "-i",
             "pipe:0",
-            "-ss",
-            "00:00:01",
             "-vframes",
             "1",
             "-f",
@@ -105,24 +108,21 @@ pub async fn generate_video_thumbnail(video_bytes: &[u8]) -> anyhow::Result<Vec<
     let mut stdin = child
         .stdin
         .take()
-        .ok_or_else(|| anyhow::anyhow!("Unable to open stdin ffmpeg"))?;
+        .ok_or_else(|| anyhow::anyhow!("Failed to open stdin"))?;
 
-        let (output, write_res) = tokio::join!(
-            child.wait_with_output(),
-            async {
-                let res = stdin.write_all(video_bytes).await;
-                drop(stdin);
-                res
-            }
-        );
-    
-        let output = output?;
-        write_res?;
+    let writer_task = tokio::spawn(async move {
+        let _ = stdin.write_all(&data).await;
+        let _ = stdin.flush().await;
+        drop(stdin);
+    });
 
-    if output.status.success() {
+    let output = child.wait_with_output().await?;
+    let _ = writer_task.await;
+
+    if output.status.success() && !output.stdout.is_empty() {
         Ok(output.stdout)
     } else {
-        Err(anyhow::anyhow!("ffmpeg: unable to process the video"))
+        Err(anyhow::anyhow!("ffmpeg: failed to generate thumbnail"))
     }
 }
 
