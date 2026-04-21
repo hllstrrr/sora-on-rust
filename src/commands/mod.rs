@@ -16,6 +16,7 @@ pub mod group {
     pub mod promote;
 }
 pub mod root {
+    pub mod cache;
     pub mod exec;
     pub mod set;
 }
