@@ -1,5 +1,4 @@
 use dashmap::DashMap;
-// use reqwest::header::{ACCEPT, ACCEPT_LANGUAGE, HeaderMap, HeaderValue, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
@@ -42,24 +41,11 @@ impl AppState {
         let start_time = Instant::now();
         let db = sled::Config::new()
             .path("database/chat")
-            .cache_capacity(10 * 1024 * 1024)
-            .mode(sled::Mode::HighThroughput)
+            .cache_capacity(2 * 1024 * 1024)
             .open()
-            .expect("Errpr opening sled database");
+            .expect("Error opening sled database");
         let settings = DashMap::new();
         let last_messages = DashMap::new();
-        // let mut headers = HeaderMap::new();
-        // headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"));
-        // headers.insert(ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,video/mp4,*/*;q=0.8"));
-        // headers.insert(ACCEPT_LANGUAGE, HeaderValue::from_static("en-US,en;q=0.5"));
-        // let http_client = reqwest::Client::builder()
-        //     .default_headers(headers)
-        //     .tcp_keepalive(std::time::Duration::from_secs(60))
-        //     .pool_idle_timeout(std::time::Duration::from_secs(90))
-        //     .pool_max_idle_per_host(10)
-        //     .build()
-        //     .unwrap();
-
         let http_client = reqwest::Client::new();
         
         // hydration from db to cache
