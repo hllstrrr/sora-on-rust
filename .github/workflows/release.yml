@@ -10,8 +10,17 @@ permissions:
 
 jobs:
   build-and-release:
-    name: Build and Release
+    name: Build (${{ matrix.build_type }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - build_type: stable
+            cargo_flags: "--features stable"
+          - build_type: performance
+            cargo_flags: "--no-default-features --features performance"
+          - build_type: profiling
+            cargo_flags: "--no-default-features --features profiling"
 
     steps:
       - name: Checkout code
@@ -23,12 +32,15 @@ jobs:
           toolchain: nightly
 
       - name: Build Release
-        run: cargo build --release
+        run: cargo build --release ${{ matrix.cargo_flags }}
+
+      - name: Prepare Binary Name
+        run: |
+          mv target/release/sora-on-rust sora-on-rust-${{ matrix.build_type }}
 
       - name: Upload Binary to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            target/release/sora-on-rust 
+          files: sora-on-rust-${{ matrix.build_type }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
