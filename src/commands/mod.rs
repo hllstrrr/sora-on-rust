@@ -19,6 +19,7 @@ pub mod root {
     pub mod cache;
     pub mod exec;
     pub mod set;
+    pub mod spamedit;
 }
 pub mod testing {
     pub mod button;
