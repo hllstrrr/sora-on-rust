@@ -1,5 +1,4 @@
 use crate::cmd;
-use crate::GLOBAL;
 use crate::commands::cmd::COMMANDS;
 use std::collections::HashSet;
 use std::fs;
@@ -92,7 +91,12 @@ cmd!(
         let app_version = env!("CARGO_PKG_VERSION");
         let compiler = option_env!("RUSTC_VERSION").unwrap_or("Rustc (Stable)");
         let build_profile = if cfg!(debug_assertions) { "debug" } else { "release" };
-
+        #[cfg(feature = "profiling")]
+        let allocator = "dhat";
+        #[cfg(feature = "stable")]
+        let allocator = "Jemalloc";
+        #[cfg(feature = "performance")]
+        let allocator = "mimalloc";
         let mut categories = HashSet::new();
         for cmd in COMMANDS.iter() {
             categories.insert(cmd.category());
@@ -141,7 +145,7 @@ cmd!(
 App: {} v{}
 Library: whatsapp-rust v{}
 Compiler: {}
-Allocator: {:?}
+Allocator: {}
 Build Profile: {}
 Total Commands: {}
 Total Categories: {}
@@ -179,7 +183,7 @@ Active Threads: {}
             get_lib_version(),
             app_version,
             compiler,
-            GLOBAL,
+            allocator,
             build_profile,
             COMMANDS.len(),
             categories.len(),

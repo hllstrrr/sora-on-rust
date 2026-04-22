@@ -7,17 +7,26 @@ version = "0.3.0"
 anyhow = "1.0.102"
 async-trait = "0.1.89"
 chrono = "0.4.44"
+dhat = { version = "0.3.3", optional = true }
 dotenvy = "0.15.7"
 env_logger = "0.11.10"
 libc = "0.2.185"
 linkme = "0.3.36"
 log = "0.4.29"
-tikv-jemallocator = "0.6.1"
+mimalloc = { version = "0.1.50", optional = true }
+tikv-jemallocator = { version = "0.6.1", optional = true }
 toml = "1.1.2"
 wacore = "0.5"
 waproto = "0.5"
 whatsapp-rust-tokio-transport = "0.5"
 whatsapp-rust-ureq-http-client = "0.5"
+
+[features]
+default = ["stable"]
+
+stable = ["dep:tikv-jemallocator"]
+performance = ["dep:mimalloc"]
+profiling = ["dep:dhat"]
 
 [dependencies.dashmap]
 version = "6.1.0"
