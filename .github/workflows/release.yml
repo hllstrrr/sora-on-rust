@@ -32,11 +32,20 @@ jobs:
           toolchain: nightly
 
       - name: Build Release
-        run: cargo build --release ${{ matrix.cargo_flags }}
+        run: |
+          if [[ "${{ matrix.build_type }}" == "profiling" ]]; then
+            cargo build --profile profiling --no-default-features --features profiling
+          else
+            cargo build --release ${{ matrix.cargo_flags }}
+          fi
 
       - name: Prepare Binary Name
         run: |
-          mv target/release/sora-on-rust sora-on-rust-${{ matrix.build_type }}
+          if [ -f "target/profiling/sora-on-rust" ]; then
+            mv target/profiling/sora-on-rust sora-on-rust-profiling
+          else
+            mv target/release/sora-on-rust sora-on-rust-${{ matrix.build_type }}
+          fi
 
       - name: Upload Binary to Release
         uses: softprops/action-gh-release@v2
