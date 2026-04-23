@@ -1,7 +1,7 @@
 [package]
 name = "sora-on-rust"
 edition = "2024"
-version = "0.4.0"
+version = "0.4.1"
 
 [dependencies]
 anyhow = "1.0.102"
@@ -59,3 +59,9 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+debug = false
+
+[profile.profiling]
+inherits = "release"
+debug = 2
+strip = false
