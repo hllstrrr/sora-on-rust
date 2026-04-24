@@ -72,11 +72,15 @@ impl MessageExt for Message {
 }
 
 pub async fn get_media_bytes(state: Arc<AppState>, data: Vec<u8>) -> anyhow::Result<Vec<u8>> {
-    if let Ok(url_str) = std::str::from_utf8(&data)
-        && url_str.starts_with("http")
-    {
-        let resp = state.http_client.get(url_str).send().await?;
-        return Ok(resp.bytes().await?.to_vec());
+    if let Ok(str_val) = std::str::from_utf8(&data) {
+        let trimmed_val = str_val.trim();
+        if trimmed_val.starts_with("http") {
+            let resp = state.http_client.get(trimmed_val).send().await?;
+            return Ok(resp.bytes().await?.to_vec());
+        }
+        if tokio::fs::metadata(trimmed_val).await.is_ok() {
+            return Ok(tokio::fs::read(trimmed_val).await?);
+        }
     }
     Ok(data)
 }
