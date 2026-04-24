@@ -42,15 +42,15 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
         .trim()
         .to_string();
     let parts: Vec<&str> = raw_metadata.split('|').collect();
+    if parts.len() < 4 {
+        ctx.reply("Video not found. perhaps something went wrong?").await?;
+        return Ok(());
+    }
     let video_id = parts[0];
     let title = parts[1];
     let channel = parts[2];
     let thumbnail_url = parts[3];
 
-    if video_id.is_empty() {
-        ctx.reply("Not found.").await?;
-        return Ok(());
-    }
 
     let file_path = format!("downloads/{}.mp3", video_id);
     let _ = fs::create_dir_all("downloads");
@@ -108,7 +108,17 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
         context: ctx,
         audio_data: file_path,
         dst: ctx.info.source.chat,
-        reply: true
+        reply: true,
+        config_context: |context_info: &mut waproto::whatsapp::ContextInfo| {
+            context_info.external_ad_reply = Some(waproto::whatsapp::context_info::ExternalAdReplyInfo {
+                title: Some(title.to_string()),
+                body: Some(channel.to_string()),
+                media_type: Some(1),
+                thumbnail_url: Some(thumbnail_url.to_string()),
+                render_larger_thumbnail: Some(true),
+                ..Default::default()
+            });
+        }
     )
     .await?;
 
