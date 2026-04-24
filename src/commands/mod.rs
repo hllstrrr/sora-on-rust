@@ -1,5 +1,6 @@
 pub mod cmd;
 pub mod downloader {
+    pub mod play;
     pub mod reels;
 }
 pub mod general {

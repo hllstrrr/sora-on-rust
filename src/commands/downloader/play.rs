@@ -1,0 +1,116 @@
+use crate::{cmd, commands::cmd::Context};
+use std::fs;
+use std::path::Path;
+use std::process::Stdio;
+use tokio::process::Command;
+
+cmd!(
+    Play,
+    name: "play",
+    aliases: ["ytmp3", "song"],
+    category: "downloader",
+    execute: |ctx| {
+        play_audio(ctx).await?;
+    }
+);
+
+async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
+    let _ = fs::create_dir_all("cookies");
+    let cookie_path = "cookies/www.youtube.com_cookies.txt";
+    let input = if ctx.args.is_empty() {
+        ctx.reply("Input title or url.").await?;
+        return Ok(());
+    } else {
+        ctx.args.join(" ")
+    };
+
+    ctx.react("🕒").await?;
+
+    let metadata_output = Command::new("yt-dlp")
+        .args([
+            "--print",
+            "%(id)s|%(title)s|%(uploader)s|%(thumbnail)s",
+            "--no-playlist",
+            &format!("ytsearch:'{}'", input),
+            "--cookies",
+            cookie_path,
+        ])
+        .output()
+        .await?;
+
+    let raw_metadata = String::from_utf8_lossy(&metadata_output.stdout)
+        .trim()
+        .to_string();
+    let parts: Vec<&str> = raw_metadata.split('|').collect();
+    let video_id = parts[0];
+    let title = parts[1];
+    let channel = parts[2];
+    let thumbnail_url = parts[3];
+
+    if video_id.is_empty() {
+        ctx.reply("Not found.").await?;
+        return Ok(());
+    }
+
+    let file_path = format!("downloads/{}.mp3", video_id);
+    let _ = fs::create_dir_all("downloads");
+
+    if Path::new(&file_path).exists() {
+        ctx.react("✅").await?;
+        send_audio!(
+            context: ctx,
+            audio_data: file_path,
+            dst: ctx.info.source.chat,
+            reply: true,
+            config_context: |context_info: &mut waproto::whatsapp::ContextInfo| {
+                context_info.external_ad_reply = Some(waproto::whatsapp::context_info::ExternalAdReplyInfo {
+                    title: Some(title.to_string()),
+                    body: Some(channel.to_string()),
+                    media_type: Some(1),
+                    thumbnail_url: Some(thumbnail_url.to_string()),
+                    render_larger_thumbnail: Some(true),
+                    ..Default::default()
+                });
+            }
+        )
+        .await?;
+        return Ok(());
+    }
+
+    ctx.react("👀").await?;
+    let download_process = Command::new("yt-dlp")
+        .args([
+            "-x",
+            "--audio-format",
+            "mp3",
+            "--no-playlist",
+            "-o",
+            "downloads/%(id)s.%(ext)s",
+            "--cookies",
+            cookie_path,
+            &format!("https://www.youtube.com/watch?v={}", video_id),
+        ])
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    let output = download_process.wait_with_output().await?;
+
+    if !output.status.success() {
+        let err = String::from_utf8_lossy(&output.stderr);
+        ctx.reply(&format!("Failed to download audio: {}", err))
+            .await?;
+        return Ok(());
+    }
+
+    ctx.react("✅").await?;
+    send_audio!(
+        context: ctx,
+        audio_data: file_path,
+        dst: ctx.info.source.chat,
+        reply: true
+    )
+    .await?;
+
+    Ok(())
+}
