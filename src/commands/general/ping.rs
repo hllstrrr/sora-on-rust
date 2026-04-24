@@ -1,6 +1,6 @@
 use crate::{cmd, commands::cmd::Context};
-use std::time::{Duration, Instant};
-use tokio::{net::TcpStream, time::sleep};
+use std::time::Instant;
+use tokio::net::TcpStream;
 use waproto::whatsapp as wa;
 
 cmd!(
