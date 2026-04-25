@@ -1,7 +1,7 @@
 [package]
 name = "sora-on-rust"
 edition = "2024"
-version = "0.5.0"
+version = "0.5.1"
 
 [dependencies]
 anyhow = "1.0.102"
@@ -10,7 +10,7 @@ chrono = "0.4.44"
 dhat = { version = "0.3.3", optional = true }
 dotenvy = "0.15.7"
 env_logger = "0.11.10"
-libc = "0.2.185"
+libc = "0.2.186"
 linkme = "0.3.36"
 log = "0.4.29"
 mimalloc = { version = "0.1.50", optional = true }

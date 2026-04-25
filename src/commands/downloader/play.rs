@@ -16,6 +16,8 @@ cmd!(
 
 async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
     let _ = fs::create_dir_all("cookies");
+
+    let _ = fs::create_dir_all("downloads");
     let cookie_path = "cookies/www.youtube.com_cookies.txt";
     let input = if ctx.args.is_empty() {
         ctx.reply("Input title or url.").await?;
@@ -25,25 +27,37 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
     };
 
     ctx.react("🕒").await?;
+    let raw_metadata: String;
+    let metadata_path = format!("downloads/{}.txt", input);
+    if Path::new(&metadata_path).exists() {
+        println!("metadata cache hit!, skipping metadata fetch.");
+        raw_metadata = tokio::fs::read_to_string(&metadata_path).await?;
+    } else {
+        println!("metadata cache miss, fetching metadata...");
+        let metadata_output = Command::new("yt-dlp")
+            .env_remove("NODE_CHANNEL_FD")
+            .args([
+                "--print",
+                "%(id)s|%(title)s|%(uploader)s|%(thumbnail)s",
+                "--no-playlist",
+                &format!("ytsearch:'{}'", input),
+                "--cookies",
+                cookie_path,
+            ])
+            .output()
+            .await?;
 
-    let metadata_output = Command::new("yt-dlp")
-        .args([
-            "--print",
-            "%(id)s|%(title)s|%(uploader)s|%(thumbnail)s",
-            "--no-playlist",
-            &format!("ytsearch:'{}'", input),
-            "--cookies",
-            cookie_path,
-        ])
-        .output()
-        .await?;
+        raw_metadata = String::from_utf8_lossy(&metadata_output.stdout)
+            .trim()
+            .to_string();
 
-    let raw_metadata = String::from_utf8_lossy(&metadata_output.stdout)
-        .trim()
-        .to_string();
+        tokio::fs::write(&metadata_path, &raw_metadata).await?;
+    }
+
     let parts: Vec<&str> = raw_metadata.split('|').collect();
     if parts.len() < 4 {
-        ctx.reply("Video not found. perhaps something went wrong?").await?;
+        ctx.reply("Video not found. perhaps something went wrong?")
+            .await?;
         return Ok(());
     }
     let video_id = parts[0];
@@ -51,11 +65,10 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
     let channel = parts[2];
     let thumbnail_url = parts[3];
 
-
     let file_path = format!("downloads/{}.mp3", video_id);
-    let _ = fs::create_dir_all("downloads");
 
     if Path::new(&file_path).exists() {
+        println!("cache hit!, skipping download.");
         ctx.react("✅").await?;
         send_audio!(
             context: ctx,
@@ -79,6 +92,7 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
 
     ctx.react("👀").await?;
     let download_process = Command::new("yt-dlp")
+        .env_remove("NODE_CHANNEL_FD")
         .args([
             "-x",
             "--audio-format",
