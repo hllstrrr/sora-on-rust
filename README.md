@@ -20,7 +20,7 @@ A Simple, Lightweight and Fast WhatsApp Bot Written on rust.
 ## Todo
 - ai
 - translate
-- play mp3 song youtube ytdlp
+- multiple superuser
   
 ## Acknowledgemnt
 - [whatsapp-rust](https://githuh.com/oxidezap/whatsapp-rust) awesome whatsapp web client api built in rust 
