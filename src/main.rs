@@ -50,6 +50,8 @@ async fn main() -> anyhow::Result<()> {
         panic!("Please delete your garbage OS and install Linux instead to run this program.");
     }
 
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     #[cfg(feature = "profiling")]
     let _profiler = dhat::Profiler::new_heap();
 
