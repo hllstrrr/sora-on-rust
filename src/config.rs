@@ -119,6 +119,18 @@ fn default_show_online() -> bool {
     true
 }
 
+const DEFAULT_CONFIG_TOML: &str = r#"prefixes = ['"', "'"]
+session_path = "database/session/whatsapp.db"
+custom_code = "HELLSTAR"
+mode = "self" #self, public
+warmup = "normal" #off, normal
+autoread = "off" #off, all, dm, group
+pairing = "code" #qr, code
+show_online = true
+wa_log_level = "off"
+debug_dump = false # true = print every inbound message to console (costly, dev only)
+"#;
+
 impl AppConfig {
     pub fn load() -> anyhow::Result<Self> {
         dotenvy::dotenv().ok();
@@ -130,6 +142,16 @@ impl AppConfig {
             }
         };
         let su = std::env::var("SUPERUSER").ok();
+
+        if !std::path::Path::new("Config.toml").exists() {
+            fs::write("Config.toml", DEFAULT_CONFIG_TOML)?;
+            crate::logger::warn(
+                "config",
+                "Config.toml not found, a default one has been generated. Please review it and restart.",
+            );
+            std::process::exit(1);
+        }
+
         let toml_str = fs::read_to_string("Config.toml")?;
         let mut config: AppConfig = toml::from_str(&toml_str)?;
         config.superuser = if let Some(su_str) = su {

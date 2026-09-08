@@ -96,7 +96,18 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
             "--cookies",
             cookie_path,
         ]);
-        let metadata_output = timeout(EXTERNAL_PROCESS_TIMEOUT, metadata_cmd.output()).await??;
+        let metadata_output = match timeout(EXTERNAL_PROCESS_TIMEOUT, metadata_cmd.output()).await {
+            Ok(Ok(output)) => output,
+            Ok(Err(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+                ctx.reply("yt-dlp is not installed on this server.").await?;
+                return Ok(());
+            }
+            Ok(Err(e)) => return Err(e.into()),
+            Err(_) => {
+                ctx.reply("Fetching metadata timed out.").await?;
+                return Ok(());
+            }
+        };
 
         raw_metadata = String::from_utf8_lossy(&metadata_output.stdout)
             .trim()
@@ -152,7 +163,7 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
     }
 
     ctx.react("👀").await?;
-    let download_process = Command::new("yt-dlp")
+    let download_process = match Command::new("yt-dlp")
         .env_remove("NODE_CHANNEL_FD")
         .args([
             "-x",
@@ -167,7 +178,15 @@ async fn play_audio(ctx: Context<'_>) -> anyhow::Result<()> {
         ])
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
-        .spawn()?;
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            ctx.reply("yt-dlp is not installed on this server.").await?;
+            return Ok(());
+        }
+        Err(e) => return Err(e.into()),
+    };
 
     let output = match timeout(
         EXTERNAL_PROCESS_TIMEOUT,
