@@ -1,0 +1,9 @@
+[target.x86_64-unknown-linux-musl]
+pre-build = [
+    "find / -name 'libgcc.a' -exec sh -c 'ln -sf \"$1\" \"$(dirname \"$1\")/libgcc_s.a\"' _ {} \\; 2>/dev/null || true"
+]
+
+[target.aarch64-unknown-linux-musl]
+pre-build = [
+    "find / -name 'libgcc.a' -exec sh -c 'ln -sf \"$1\" \"$(dirname \"$1\")/libgcc_s.a\"' _ {} \\; 2>/dev/null || true"
+]
