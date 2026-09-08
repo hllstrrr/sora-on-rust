@@ -105,7 +105,6 @@ impl ReqwestClient {
 
 #[async_trait]
 impl HttpClient for ReqwestClient {
-    /// Executes a given HTTP request and returns the response.
     async fn execute(&self, request: HttpRequest) -> anyhow::Result<HttpResponse> {
         let mut req = self.client.request(request.method.parse()?, &request.url);
         for (k, v) in &request.headers {
@@ -129,14 +128,11 @@ impl HttpClient for ReqwestClient {
         }
         Ok(HttpResponse { status_code, body })
     }
-
-    /// Whether this client supports synchronous streaming downloads.
+    
     fn supports_streaming(&self) -> bool {
         true
     }
-
-    /// Synchronous streaming variant — returns a reader over the response body.
-    /// Must be called from a blocking context.
+    
     fn execute_streaming(&self, request: HttpRequest) -> anyhow::Result<StreamingHttpResponse> {
         let handle = tokio::runtime::Handle::current();
         let client = self.client.clone();
@@ -164,16 +160,11 @@ impl HttpClient for ReqwestClient {
             body: Box::new(capped),
         })
     }
-
-    /// Whether this client can stream a request body from a reader (upload).
+    
     fn supports_upload_streaming(&self) -> bool {
         true
     }
-
-    /// Synchronous streaming upload: send `body` (exactly `content_length` bytes)
-    /// as the request body. Implementations MUST set an explicit `Content-Length`
-    /// rather than chunked transfer-encoding. Any body set on `request` is
-    /// ignored. Must be called from a blocking context.
+    
     fn execute_upload(
         &self,
         request: HttpRequest,
@@ -202,12 +193,7 @@ impl HttpClient for ReqwestClient {
             Ok(HttpResponse { status_code, body })
         })
     }
-
-    /// Best-effort per-session footprint of this client: idle connection-pool
-    /// buffers plus any in-flight download/media buffering the impl can see.
-    /// `None` by default; `ureq`/`reqwest`-backed clients report what their
-    /// (limited) introspection allows. Media downloads are a real transient-RAM
-    /// source, so a coarse estimate is still worth reporting.
+    
     fn resource_report(&self) -> Option<HttpResourceReport> {
         None
     }
